@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <string.h>
 #include <windows.h>
+#include <SDL3/SDL.h>
+#include <SLD3/SDL_main.h>
 
 /*4KB memory, dont use 0x000 from 0x1FF. Most programs start at 0x200*/
 
