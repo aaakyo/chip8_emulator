@@ -65,7 +65,7 @@ void print_display(uint8_t display[64][32])
     {
         for (int x = 0; x < 64; x++)
         {
-            printf("%s", display[x][y] ? "\u2588" : " ");
+            printf("%s", display[x][y] ? "\u2588\u2588" : "  ");
         }
         printf("\n");
     }
@@ -319,12 +319,23 @@ int main()
             switch (inst & 0x00FF)
             {
             case 0x29:
+                i = 0x50 + (V[regF] * 5);
                 break;
             case 0x33:
+                uint8_t val = V[regF];
+                memory[i] = val / 100;
+                memory[i+1] = (val / 10) % 10;
+                memory[i+2] = val % 10;
                 break;
             case 0x55:
+                for(int idx = 0; idx <= regF; idx++) {
+                    memory[i + idx] = V[idx];
+                }
                 break;
             case 0x65:
+                for(int idx = 0; idx <= regF; idx++) {
+                    V[idx] = memory[i + idx];
+                }
                 break;
             default:
                 break;
