@@ -4,8 +4,23 @@
 #include <stdbool.h>
 #include <string.h>
 #include <windows.h>
+#define SDL_MAIN_HANDLED
 #include <SDL3/SDL.h>
-#include <SLD3/SDL_main.h>
+#define SCALE 10
+
+/* 
+##################################################
+#                      SDL3                      #
+##################################################
+*/
+
+
+/* SDL window and renderer*/
+
+
+
+
+
 
 /*4KB memory, dont use 0x000 from 0x1FF. Most programs start at 0x200*/
 
@@ -60,18 +75,21 @@ int load_rom(const char *filename, uint8_t *memory)
     return 0;
 }
 
-void print_display(uint8_t display[64][32])
-{
-    system("cls"); // Clear the console (Windows)
-    for (int y = 0; y < 32; y++)
-    {
-        for (int x = 0; x < 64; x++)
-        {
-            printf("%s", display[x][y] ? "\u2588\u2588" : "  ");
+void render_display(SDL_Renderer *renderer, uint8_t display[64][32]) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(renderer);
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    for(int x = 0; x < 64; x++) {
+        for(int y = 0; y < 32; y++) {
+            if(display[x][y]) {
+                SDL_FRect rect = { x * SCALE, y * SCALE, SCALE, SCALE };
+                SDL_RenderFillRect(renderer, &rect);
+            }
         }
-        printf("\n");
     }
-    printf("\n");
+
+    SDL_RenderPresent(renderer);
 }
 
 int main()
@@ -98,6 +116,9 @@ int main()
     uint8_t dt;
     uint8_t st;
 
+    /* CHIP8's keypad */
+    bool keypad[16];
+
     if (load_rom("test_opcode.ch8", memory) != 0)
     {
         return 1;
@@ -108,8 +129,77 @@ int main()
 
     bool draw_flag = true;
 
-    while (true)
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Event event;
+
+    static SDL_Window *window = NULL;
+    static SDL_Renderer *renderer = NULL;
+
+    if (!SDL_CreateWindowAndRenderer("CHIP8", 640, 320, SDL_WINDOW_MAXIMIZED, &window, &renderer)) {
+        SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
+        return 1;
+    }
+
+    bool running = true;
+    while (running)
     {
+        /*
+        ##############################
+        #       Poll SLD events      #
+        ##############################
+        */
+        while(SDL_PollEvent(&event)) {
+            
+            if (event.type == SDL_EVENT_QUIT) {
+                running = false;
+            } else if (event.type == SDL_EVENT_KEY_DOWN) {
+                switch (event.key.key) {
+                    case SDLK_1: keypad[0x1] = true; break;
+                    case SDLK_2: keypad[0x2] = true; break;
+                    case SDLK_3: keypad[0x3] = true; break;
+                    case SDLK_4: keypad[0xC] = true; break;
+                    case SDLK_Q: keypad[0x4] = true; break;
+                    case SDLK_W: keypad[0x5] = true; break;
+                    case SDLK_E: keypad[0x6] = true; break;
+                    case SDLK_R: keypad[0xD] = true; break;
+                    case SDLK_A: keypad[0x7] = true; break;
+                    case SDLK_S: keypad[0x8] = true; break;
+                    case SDLK_D: keypad[0x9] = true; break;
+                    case SDLK_F: keypad[0xE] = true; break;
+                    case SDLK_Z: keypad[0xA] = true; break;
+                    case SDLK_X: keypad[0x0] = true; break;
+                    case SDLK_C: keypad[0xB] = true; break;
+                    case SDLK_V: keypad[0xF] = true; break;
+                    default: break;
+                }
+            } else if (event.type == SDL_EVENT_KEY_UP) {
+                switch (event.key.key) {
+                    case SDLK_1: keypad[0x1] = false; break;
+                    case SDLK_2: keypad[0x2] = false; break;
+                    case SDLK_3: keypad[0x3] = false; break;
+                    case SDLK_4: keypad[0xC] = false; break;
+                    case SDLK_Q: keypad[0x4] = false; break;
+                    case SDLK_W: keypad[0x5] = false; break;
+                    case SDLK_E: keypad[0x6] = false; break;
+                    case SDLK_R: keypad[0xD] = false; break;
+                    case SDLK_A: keypad[0x7] = false; break;
+                    case SDLK_S: keypad[0x8] = false; break;
+                    case SDLK_D: keypad[0x9] = false; break;
+                    case SDLK_F: keypad[0xE] = false; break;
+                    case SDLK_Z: keypad[0xA] = false; break;
+                    case SDLK_X: keypad[0x0] = false; break;
+                    case SDLK_C: keypad[0xB] = false; break;
+                    case SDLK_V: keypad[0xF] = false; break;
+                    default: break;
+                }
+            }
+
+        }
+        /*
+        ##############################
+        # FETCH-DECODE-EXECUTE LOGIC #
+        ##############################
+        */
 
         uint16_t inst = (memory[pc] << 8) | memory[pc + 1];
 
@@ -316,6 +406,25 @@ int main()
             draw_flag = true;
             pc += 2;
             break;
+        case (0xE000): //EXNN
+            uint8_t regE = (inst >> 8) & 0x000F;
+            switch (inst & 0x00FF){
+                case 0x9E:
+                    if (keypad[regE]) {
+                        pc += 2;
+                    }
+                    pc += 2;
+                    break;
+                case 0xA1:
+                    if (!keypad[regE]) {
+                        pc += 2;
+                    }
+                    pc += 2;
+                    break;
+                default:
+                    pc += 2;
+                    break;
+            }
         case (0xF000):
             uint8_t regF = (inst >> 8) & 0x000F;
             switch (inst & 0x00FF)
@@ -339,6 +448,19 @@ int main()
                     V[idx] = memory[i + idx];
                 }
                 break;
+            case 0x0A:
+                bool key_found = false;
+                for(int idx = 0; idx < 16 || !key_found; idx++) {
+                    if (keypad[idx]) {
+                        V[regF] = idx;
+                        key_found = true;
+                    }
+
+                    if(key_found) {
+                        pc += 2;
+                    }
+                }
+                break;
             default:
                 break;
             }
@@ -351,10 +473,14 @@ int main()
 
         if (draw_flag)
         {
-            print_display(display);
+            render_display(renderer, display);
             draw_flag = false;
         }
 
         Sleep(2);
     }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 }
