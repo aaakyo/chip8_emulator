@@ -116,6 +116,7 @@ int main()
 
     /* CHIP8's keypad */
     bool keypad[16] = {0};
+    bool keypad_prev[16] = {0};
 
     if (load_rom("6-keypad.ch8", memory) != 0)
     {
@@ -273,6 +274,8 @@ int main()
                 }
             }
         }
+
+
 
         Uint64 now = SDL_GetTicks();
         if (now - last_instruction_time >= INSTRUCTION_INTERVAL_MS)
@@ -497,14 +500,14 @@ int main()
                 switch (inst & 0x00FF)
                 {
                 case 0x9E:
-                    if (keypad[regE])
+                    if (keypad[V[regE]])
                     {
                         pc += 2;
                     }
                     pc += 2;
                     break;
                 case 0xA1:
-                    if (!keypad[regE])
+                    if (!keypad[V[regE]])
                     {
                         pc += 2;
                     }
@@ -548,7 +551,7 @@ int main()
                     bool key_found = false;
                     for (int idx = 0; idx < 16 && !key_found; idx++)
                     {
-                        if (keypad[idx])
+                        if (keypad_prev[idx] && !keypad[idx])
                         {
                             V[regF] = idx;
                             key_found = true;
@@ -584,6 +587,7 @@ int main()
             }
 
             last_instruction_time = now;
+            memcpy(keypad_prev, keypad, sizeof(keypad));
         }
 
         /*
