@@ -150,7 +150,7 @@ int main()
     {
         /*
         ##############################
-        #       Poll SLD events      #
+        #       Poll SDL events      #
         ##############################
         */
         while (SDL_PollEvent(&event))
@@ -546,7 +546,7 @@ int main()
                     break;
                 case 0x0A:
                     bool key_found = false;
-                    for (int idx = 0; idx < 16 || key_found; idx++)
+                    for (int idx = 0; idx < 16 && !key_found; idx++)
                     {
                         if (keypad[idx])
                         {
