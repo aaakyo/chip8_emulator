@@ -129,9 +129,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    uint16_t stuck_inst = (memory[0x2E0] << 8) | memory[0x2E0 + 1];
-    printf("Instruction at 0x2E0: %04X\n", stuck_inst);
-
     bool draw_flag = true;
 
     SDL_Init(SDL_INIT_VIDEO);
