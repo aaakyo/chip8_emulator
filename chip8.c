@@ -90,7 +90,7 @@ void render_display(SDL_Renderer *renderer, uint8_t display[64][32])
     SDL_RenderPresent(renderer);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     FILE *log = fopen("trace.log", "w");
     SetConsoleOutputCP(CP_UTF8);
@@ -118,7 +118,13 @@ int main()
     bool keypad[16] = {0};
     bool keypad_prev[16] = {0};
 
-    if (load_rom("6-keypad.ch8", memory) != 0)
+    if (argc < 2)
+    {
+        printf("Usage: %s <rom_file>", argv[0]);
+        return 1;
+    }
+
+    if (load_rom(argv[1], memory) != 0)
     {
         return 1;
     }
@@ -274,8 +280,6 @@ int main()
                 }
             }
         }
-
-
 
         Uint64 now = SDL_GetTicks();
         if (now - last_instruction_time >= INSTRUCTION_INTERVAL_MS)
@@ -450,7 +454,7 @@ int main()
                 i = valueA;
                 pc += 2;
                 break;
-            case (0xB000): //BNNN
+            case (0xB000): // BNNN
                 pc = (inst & 0x0FFF) + V[0];
                 break;
             case (0xC000): // CXNN
@@ -556,9 +560,9 @@ int main()
                             V[regF] = idx;
                             key_found = true;
                         }
-
                     }
-                    if (key_found) pc += 2;
+                    if (key_found)
+                        pc += 2;
                     break;
                 case 0x07:
                     V[regF] = dt;
