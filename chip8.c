@@ -71,10 +71,10 @@ int load_rom(const char *filename, uint8_t *memory)
 
 void render_display(SDL_Renderer *renderer, uint8_t display[64][32])
 {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+    SDL_SetRenderDrawColor(renderer, 255, 199, 228, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 59, 160, 255);
     for (int x = 0; x < 64; x++)
     {
         for (int y = 0; y < 32; y++)
